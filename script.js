@@ -16,7 +16,7 @@ const resultContainer = document.getElementById("result-text");
  * @param {MouseEvent} event - Об'єкт події кліку миші.
  * @returns {void}
  */
-convertButton.addEventListener("click", function () {
+convertButton.addEventListener("click", function (event) {
   const text = sourceTextArea.value;
   resultContainer.innerHTML = "";
   if (countdownTimeout) {
@@ -25,52 +25,31 @@ convertButton.addEventListener("click", function () {
 
   let letterCount = 0;
 
-  //  створити контейнер для поточного слова
-  let currentWordSpan = document.createElement("span");
-  currentWordSpan.style.display = "inline-block";
-  currentWordSpan.style.whiteSpace = "nowrap";
-
   for (let char of text) {
     if (char === " ") {
-      // кінець слова перед пробілом
-      if (currentWordSpan.children.length > 0) {
-        resultContainer.appendChild(currentWordSpan);
-      }
-
-      // пробіл, де дозволено робити автоматичний <br>
+      // Створення простого пробілу, який дозволяє переноса рядка
       const space = document.createElement("span");
       space.innerHTML = " ";
       space.style.display = "inline";
       space.style.whiteSpace = "normal";
       resultContainer.appendChild(space);
-
-      // Готуємо новий порожній контейнер для наступного слова
-      currentWordSpan = document.createElement("span");
-      currentWordSpan.style.display = "inline-block";
-      currentWordSpan.style.whiteSpace = "nowrap";
-    } else if (char === "\n") {                           //  \n (технічний знак, щоб перейти на новий рядок при Enter
-      if (currentWordSpan.children.length > 0) {
-        resultContainer.appendChild(currentWordSpan);
-      }
-
+    } else if (char === "\n") {
+      // Примусовий Enter
       const br = document.createElement("br");
       resultContainer.appendChild(br);
-
-      currentWordSpan = document.createElement("span");
-      currentWordSpan.style.display = "inline-block";
-      currentWordSpan.style.whiteSpace = "nowrap";
     } else {
-      // попередньо рахуємо час анімації
+      // ОБЧИСЛЕННЯ ЗАДРИМКИ: Кожна літера падає одна за одною з інтервалом 0.04с
       const animDelay = letterCount * 0.04 + "s";
 
-      // перевірка, що маємо в колекції картинок
       const hasNumber = /[0-9]/.test(char);
       const hasLetter = /[a-zA-Z]/.test(char);
-      const hasSymbol = /[!\.\-_,\?\@\"\/:]/.test(char);
-
+      const hasSymbol = /[!\.\-_,\?\@\":\/]/.test(char);
 
       if (hasNumber || hasLetter || hasSymbol) {
         const img = document.createElement("img");
+
+        // Стиль inline-block для картинок, щоб вони не розривалися всередині екрану
+        img.style.display = "inline-block";
 
         if (hasNumber) {
           img.src = `${Letters}number_${char}.png`;
@@ -96,16 +75,13 @@ convertButton.addEventListener("click", function () {
 
         img.alt = char;
 
+        // АКТИВАЦІЯ ЗМІННИХ: Тепер вони записуються прямо на img, і CSS їх бачить!
         img.style.setProperty("--anim-delay", animDelay);
         const randomShift = Math.floor(Math.random() * 30) - 10 + "px";
         img.style.setProperty("--shift", randomShift);
 
         /**
          * Обробник помилки завантаження зображення.
-         * Якщо файл відсутній на диску, замінює елемент <img> на текстовий <span>.
-         * @this {HTMLImageElement} - Елемент зображення, який не вдалося завантажити.
-         * @param {Event} errEvent - Об'єкт події помилки.
-         * @returns {void}
          */
         img.onerror = function () {
           const textFallback = document.createElement("span");
@@ -116,8 +92,7 @@ convertButton.addEventListener("click", function () {
           }
         };
 
-        // Додаємо літеру всередину слова span
-        currentWordSpan.appendChild(img);
+        resultContainer.appendChild(img);
         letterCount++;
       }
       // Символу немає в колекції — виводимо звичайним текстом
@@ -126,15 +101,10 @@ convertButton.addEventListener("click", function () {
         textSpan.innerText = char;
         textSpan.style.setProperty("--anim-delay", animDelay);
 
-        currentWordSpan.appendChild(textSpan);
+        resultContainer.appendChild(textSpan);
         letterCount++;
       }
     }
-  }
-
-  //  на екран останнє слово тексту
-  if (currentWordSpan.children.length > 0) {
-    resultContainer.appendChild(currentWordSpan); //Якщо слово містить літери, контейнер зі словом публікуєм
   }
 
   countdownTimeout = setTimeout(function () {
